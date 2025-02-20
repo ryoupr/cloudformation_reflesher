@@ -3,7 +3,7 @@
   "name": "CloudFormation Refresher",
   "version": "1.0",
   "description": "AWS CloudFormation画面の自動更新を行う拡張機能",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab"],
   "action": {
     "default_popup": "popup.html"
   },
