@@ -10,7 +10,11 @@
   "content_scripts": [
     {
       "matches": ["https://*.console.aws.amazon.com/*cloudformation*"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
+  ],
+  "host_permissions": [
+    "https://*.console.aws.amazon.com/*cloudformation*"
   ]
 }
