@@ -11,6 +11,10 @@ AWS CloudFormation コンソールの更新ボタンを自動的にクリック�
 
 ## インストール方法
 
+### 一般利用者向け
+1. (Chrome ウェブストア)[https://chromewebstore.google.com/detail/cloudformation-refresher/gpkknjnhiakkgigfepmocdabcfmggcce?hl=ja] から導入
+
+### 開発者向け
 1. Google Chrome で `chrome://extensions` を開く
 2. 右上の「デベロッパーモード」を有効にする
 3. 「パッケージ化されていない拡張機能を読み込む」をクリック
