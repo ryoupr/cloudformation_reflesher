@@ -1,4 +1,6 @@
 let refreshInterval = null;
+let currentInterval = 3000; // デフォルトの間隔を保持 (popup.jsのデフォルトと合わせる)
+let isRunning = false; // 実行状態を保持
 
 // デバッグログ出力
 function debugLog(message, data = null) {
@@ -63,11 +65,15 @@ function performRefresh() {
 
 // 自動更新の開始
 function startAutoRefresh(interval) {
-  debugLog(`自動更新を開始（間隔: ${interval/1000}秒）`);
-  
+  // intervalが未定義または不正な場合はデフォルト値を使用
+  const validInterval = (typeof interval === 'number' && interval >= 1000) ? interval : 3000;
+  currentInterval = validInterval; // 現在の間隔を保存
+  debugLog(`自動更新を開始（間隔: ${currentInterval / 1000}秒）`);
+
   try {
     stopAutoRefresh(); // 既存のインターバルをクリア
-    refreshInterval = setInterval(performRefresh, interval);
+    refreshInterval = setInterval(performRefresh, currentInterval);
+    isRunning = true; // 実行状態を更新
     debugLog('インターバルタイマーを設定しました');
   } catch (error) {
     errorLog('自動更新の開始に失敗しました', error);
@@ -77,12 +83,16 @@ function startAutoRefresh(interval) {
 // 自動更新の停止
 function stopAutoRefresh() {
   debugLog('自動更新を停止します');
-  
+
   try {
     if (refreshInterval) {
       clearInterval(refreshInterval);
       refreshInterval = null;
+      isRunning = false; // 実行状態を更新
       debugLog('インターバルタイマーをクリアしました');
+    } else {
+      // refreshIntervalがnullでもisRunningをfalseに設定
+      isRunning = false;
     }
   } catch (error) {
     errorLog('自動更新の停止に失敗しました', error);
@@ -92,26 +102,42 @@ function stopAutoRefresh() {
 // popup.jsからのメッセージを受信
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   debugLog('メッセージを受信:', message);
-  
+
   try {
-    if (message.action === 'ping') {
-      debugLog('接続確認を受信');
-      sendResponse({ status: 'ok' });
-      return true; // 非同期レスポンスのために必要
-    } else if (message.action === 'start') {
-      startAutoRefresh(message.interval);
-    } else if (message.action === 'stop') {
-      stopAutoRefresh();
-    } else {
-      errorLog('不明なアクション:', message.action);
+    switch (message.action) {
+      case 'ping':
+        debugLog('接続確認を受信');
+        sendResponse({ status: 'ok' });
+        break;
+      case 'start':
+        startAutoRefresh(message.interval);
+        sendResponse({ status: 'started', interval: currentInterval });
+        break;
+      case 'stop':
+        stopAutoRefresh();
+        sendResponse({ status: 'stopped' });
+        break;
+      case 'getStatus':
+        debugLog('状態確認リクエストを受信');
+        sendResponse({
+          status: 'statusUpdate',
+          isRunning: isRunning,
+          interval: currentInterval
+        });
+        break;
+      default:
+        errorLog('不明なアクション:', message.action);
+        sendResponse({ status: 'error', message: 'Unknown action' });
+        break;
     }
   } catch (error) {
     errorLog('メッセージ処理でエラーが発生しました', error);
+    // エラーが発生した場合でもレスポンスを返す
+    sendResponse({ status: 'error', message: error.message });
   }
-  
-  // エラー時でもレスポンスを返す
-  sendResponse({ status: 'error' });
-  return true; // 非同期レスポンスのために必要
+
+  // 非同期レスポンスのために true を返す必要がある
+  return true;
 });
 
 // 初期化時のデバッグ情報
